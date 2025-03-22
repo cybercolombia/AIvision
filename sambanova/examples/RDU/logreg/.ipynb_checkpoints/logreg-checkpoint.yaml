@@ -1,0 +1,8 @@
+meta:
+    pod_name: starters
+    script: logreg
+    pef: ''
+run:
+  batch_size: 1
+  run_args: "test --inference --listen-for-input --mock-inference --yaml-config"
+

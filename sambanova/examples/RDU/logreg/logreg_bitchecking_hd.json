@@ -1,0 +1,45 @@
+{
+  "weight_tying_shard_threshold": 4096,
+  "oow_gemm_shard_threshold": 4096,
+  "mac_resources_scale": {
+    "bwd": 1.2,
+    "fwd": 1.1,
+    "opt": 0.9
+  },
+  "par_factors": {
+    "logreg__criterion__crossentropyloss": 13,
+    "logreg__criterion__crossentropyloss_bwd_loss": 15,
+    "logreg__lin_layer__linear__cat": 1,
+    "logreg__lin_layer__linear__cat_bwd": 1,
+    "logreg__lin_layer__linear__gemm__%(0, 12, 1)__0": [
+      4,
+      1,
+      7
+    ],
+    "logreg__lin_layer__linear__gemm__12__0": [
+      7,
+      1,
+      1
+    ],
+    "logreg__lin_layer__linear__gemm__%(0, 12, 1)__0_bwd_weight": [
+      25,
+      2,
+      2
+    ],
+    "logreg__lin_layer__linear__gemm__12__0_bwd_weight": [
+      14,
+      4,
+      1
+    ],
+    "logreg__lin_layer__linear_t_output0": 1,
+    "logreg__lin_layer__linear_t_output0_bwd": 1,
+    "logreg__lin_layer__linear_t_output0_bwd_addn0": 1,
+    "logreg__lin_layer__weight__shard_row_0_col_0__logreg__lin_layer__linear__gemm__0__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_1_col_0__logreg__lin_layer__linear__gemm__1__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_2_col_0__logreg__lin_layer__linear__gemm__2__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_3_col_0__logreg__lin_layer__linear__gemm__3__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_4_col_0__logreg__lin_layer__linear__gemm__4__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_5_col_0__logreg__lin_layer__linear__gemm__5__0_bwd_weight_opt": 1,
+    "logreg__lin_layer__weight__shard_row_6_col_0__logreg__lin_layer__linear__gemm__6__0_bwd_weight_opt": 1
+  }
+}

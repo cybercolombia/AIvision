@@ -1,0 +1,57 @@
+{
+  "require_performance": true,
+  "ranks": [
+    {
+      "pef_group_id": 0,
+      "vsnodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "pef_group_id": 0,
+      "vsnodes": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "pef_group_id": 1,
+      "vsnodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "pef_group_id": 1,
+      "vsnodes": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    }
+  ]
+}
