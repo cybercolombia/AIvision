@@ -86,8 +86,12 @@ class Unet(nn.Module):
         #Classifier
         self.out = nn.Conv2d(64, 1, kernel_size=1, padding=0) #output channels is the number of output classes
         self.sig = nn.Sigmoid()
+
+        #Loss function
+        self.criterion = nn.BCEWithLogitsLoss()
+    
         
-    def forward(self, x):
+    def forward(self, x, y):
         s1, x = self.e1(x)
         s2, x = self.e2(x)
         s3, x = self.e3(x)
@@ -102,4 +106,6 @@ class Unet(nn.Module):
        
         x = self.out(x)
         x = self.sig(x)
-        return x
+
+        loss = self.criterion(x, y)
+        return loss, x
