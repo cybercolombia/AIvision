@@ -1,5 +1,7 @@
 **/MNISTData
 **/pytorch_models
 **/data
+**/train_images
+**/train_masks
 model_*
 *~
