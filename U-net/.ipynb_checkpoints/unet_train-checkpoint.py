@@ -36,8 +36,8 @@ class CaravanaDataset(Dataset):
         self.root_path = root_path
         self.transform = Compose([Resize((512, 512)), ToTensor()])
 
-        self.images = sorted([root_path + "/train_images/" + i for i in os.listdir(root_path + "/train_images/")])
-        self.masks = sorted([root_path + "/train_masks/" + i for i in os.listdir(root_path + "/train_masks/")])
+        self.images = sorted([root_path + "data/train_images/" + i for i in os.listdir(root_path + "data/train_images/")])
+        self.masks = sorted([root_path + "data/train_masks/" + i for i in os.listdir(root_path + "data/train_masks/")])
 
         if limit == None:
             self.limit = len(self.images)
