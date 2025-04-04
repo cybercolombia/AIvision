@@ -167,7 +167,7 @@ def dice_coefficient(prediction: torch.Tensor, target: torch.Tensor,
 
 
 #TRAINING-----------------------------------
-def train(args: argparse.Namespace, model: Unet, sn_train_loader: SambaLoader, 
+def train(args: argparse.Namespace, model: nn.Module, sn_train_loader: SambaLoader, 
           sn_val_loader: SambaLoader) -> None:
     train_losses = []
     train_dcs = []
@@ -261,7 +261,7 @@ def main(argv):
     # measure-performance.  Running, or training, a model must be explicitly carried out
     if args.command == "run":
         #LOAD DATA------------------------
-        train_loader, val_loader, test_loader = prepare_dataloader(batch_size)
+        sn_train_loader, sn_val_loader, sn_test_loader = prepare_dataloader(batch_size)
         
         #TRAIN------------------------------------------
         utils.trace_graph(model, inputs, optimizer, pef=args.pef, mapping=args.mapping)
