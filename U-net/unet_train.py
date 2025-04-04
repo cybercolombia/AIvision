@@ -77,7 +77,8 @@ def prepare_dataloader(batch_size: int) -> Tuple[DataLoader, DataLoader, DataLoa
     return train_loader, val_loader, test_loader
 
 #DICE coefficient = 2*(A n B) / (|A|+|B|)
-def dice_coefficient(prediction, target, epsilon=1e-07):
+def dice_coefficient(prediction: torch.Tensor, target: torch.Tensor, 
+                     epsilon: float=1e-07) -> float:
     prediction_copy = prediction.clone()
 
     prediction_copy[prediction_copy < 0] = 0

@@ -17,6 +17,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+# The model stays the same
 class ConvNet(nn.Module):
     """
     Instantiate a 4-layer CNN for MNIST Image Classification.
@@ -63,6 +64,7 @@ class ConvNet(nn.Module):
         loss = self.criterion(out, labels)     # Compute loss
         return loss, out
 
+#Include this function in any sambanova conversion
 def add_user_args(parser: argparse.ArgumentParser) -> None:
     """
     Add user-defined arguments.
@@ -111,7 +113,7 @@ def add_user_args(parser: argparse.ArgumentParser) -> None:
 
 def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
-    Generates random SambaTensors in the same shape as MNIST image  and label tensors.
+    Generates random SambaTensors in the same shape as image  and mask tensors.
 
     In order to properly compile a PEF and trace the model graph, SambaFlow requires a SambaTensor that
     is the same shape as the input Torch Tensors, allowing the graph to be optimally mapped onto an RDU.

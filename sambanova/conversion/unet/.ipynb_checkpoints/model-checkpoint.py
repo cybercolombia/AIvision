@@ -11,14 +11,14 @@ import torch.nn.functional as F
 #Block with 2 succesive convolutions (with same padding in this case to keep the borders)
 class ConvBlock(nn.Module):
     #Receives number of input and output channels
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c: int, out_c: int):
         super(ConvBlock,self).__init__()
         self.conv1 = nn.Conv2d(in_c, out_c, kernel_size=3, padding=1) #same
         self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1) #same
         self.bn = nn.BatchNorm2d(out_c) #Normalize each batch (zero mean->no bias)
         self.relu = nn.ReLU()
         
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         #First convolution
         x = self.conv1(x)
         x = self.bn(x)
@@ -34,12 +34,12 @@ class ConvBlock(nn.Module):
 #It also returns the original input to do skip-layer connection
 # to the decoder.
 class EncoderBlock(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c: int, out_c: int):
         super(EncoderBlock,self).__init__()
         self.conv = ConvBlock(in_c, out_c)
         self.pool = nn.MaxPool2d(2)
         
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.conv(x)
         p = self.pool(x)
         return x, p
@@ -52,12 +52,12 @@ class EncoderBlock(nn.Module):
 # make the skip connection. In this case no cropping is needed,
 # as the layers have the same size because of same padding.
 class DecoderBlock(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c: int, out_c: int):
         super(DecoderBlock,self).__init__()
         self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
         self.conv = ConvBlock(2*out_c, out_c) #in channels are x2 because of the concatenation
         
-    def forward(self, x, skip):
+    def forward(self, x: torch.Tensor, skip: torch.Tensor):
         x = self.up(x)
         x = torch.cat([x, skip], dim=1) #Concatenate along the channel dimension
         x = self.conv(x)
@@ -91,7 +91,7 @@ class Unet(nn.Module):
         self.criterion = nn.BCEWithLogitsLoss()
     
         
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor):
         s1, x = self.e1(x)
         s2, x = self.e2(x)
         s3, x = self.e3(x)

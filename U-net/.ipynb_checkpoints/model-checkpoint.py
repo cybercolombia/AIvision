@@ -59,7 +59,7 @@ class DecoderBlock(nn.Module):
         
     def forward(self, x, skip):
         x = self.up(x)
-        x = torch.cat([x, skip], axis=1) #Concatenate along the channel dimension
+        x = torch.cat([x, skip], dim=1) #Concatenate along the channel dimension
         x = self.conv(x)
         return x
     
