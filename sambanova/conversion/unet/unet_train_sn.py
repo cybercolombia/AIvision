@@ -76,7 +76,7 @@ def add_user_args(parser: argparse.ArgumentParser) -> None:
     )
 
 #Include this function in any sambanova conversion
-def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor, samba.SambaTensor]:
+def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
     Generates random SambaTensors in the same shape as MNIST image  and label tensors.
 
@@ -87,7 +87,7 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor, samba.Samba
         args (argparse.Namespace): User- and system-defined command line arguments
 
     Returns:
-        A tuple of SambaTensors with random values in the same shape as MNIST image and label tensors.
+        A tuple of SambaTensors with random values in the same shape as image and mask tensors.
     """
 
     dummy_image = (
@@ -125,7 +125,7 @@ class CaravanaDataset(Dataset):
 
 def prepare_dataloader(args: argparse.Namespace) -> Tuple[SambaLoader, SambaLoader, SambaLoader]:
     dataset = CaravanaDataset(args.data_path, limit=1000) #REMOVE LIMIT FOR FULL TRAINING!!!!!!
-    print("Dataset size: ",len(dataset))
+    #print("Dataset size: ",len(dataset))
 
     # Create datasets
     generator = torch.Generator().manual_seed(25)
@@ -134,13 +134,13 @@ def prepare_dataloader(args: argparse.Namespace) -> Tuple[SambaLoader, SambaLoad
 
     # Create data loaders
     train_loader = DataLoader(dataset=train_dataset,
-                                  batch_size=batch_size,
+                                  batch_size=args.bs,
                                   shuffle=True)
     val_loader = DataLoader(dataset=val_dataset,
-                                batch_size=batch_size,
+                                batch_size=args.bs,
                                 shuffle=True)
     test_loader = DataLoader(dataset=test_dataset,
-                                 batch_size=batch_size,
+                                 batch_size=args.bs,
                                  shuffle=True)
 
     # Create SambaLoaders
@@ -174,6 +174,8 @@ def train(args: argparse.Namespace, model: nn.Module, sn_train_loader: SambaLoad
     # val_losses = []
     # val_dcs = []
 
+    hyperparam_dict = {"lr": args.learning_rate}
+    
     for epoch in range(args.num_epochs):
         model.train()
         train_running_loss = 0
