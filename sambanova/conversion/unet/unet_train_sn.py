@@ -249,7 +249,7 @@ def main(argv):
     samba.from_torch_model_(model)
 
     #OPTIMIZER-------------------------------
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
+    optimizer = samba.optim.AdamW(model.parameters(), lr=args.learning_rate)
 
     # Normally, we'd define a loss function here, but with SambaFlow, it can be defined
     # as part of the model, which we have done in this case
