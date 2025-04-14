@@ -20,6 +20,10 @@ from model import Unet
 
 WORKING_DIR = '/home/carlos/Documents/CyberComputingConsulting/AIvision/repo/AIvision/U-net/'
 MODEL_STORE_PATH = WORKING_DIR + 'model_store/'
+DATA_FOLDER = 'data2/' #'data/'
+IMG_HEIGHT = 128 #512
+IMG_WIDTH = 128 #512
+ 
 
 #Set seed for reproducibility
 def seeding(seed: int) -> None:
@@ -34,12 +38,12 @@ def seeding(seed: int) -> None:
 class CaravanaDataset(Dataset):
     def __init__(self, root_path: str, limit: int=None):
         self.root_path = root_path
-        self.transform = Compose([Resize((512, 512)), ToTensor()])
+        self.transform = Compose([Resize((IMG_HEIGHT, IMG_WIDTH)), ToTensor()])
 
-        self.images = sorted([root_path + "data/train_images/" + i for i in os.listdir(root_path + "data/train_images/")])
-        self.masks = sorted([root_path + "data/train_masks/" + i for i in os.listdir(root_path + "data/train_masks/")])
+        self.images = sorted([root_path + "train_images/" + i for i in os.listdir(root_path + "train_images/")])
+        self.masks = sorted([root_path + "train_masks/" + i for i in os.listdir(root_path + "train_masks/")])
 
-        if limit == None:
+        if (limit == None) or (limit >= len(self.images)):
             self.limit = len(self.images)
         else:
             self.limit = limit
@@ -57,7 +61,7 @@ class CaravanaDataset(Dataset):
         
 
 def prepare_dataloader(batch_size: int) -> Tuple[DataLoader, DataLoader, DataLoader]:
-    dataset = CaravanaDataset(WORKING_DIR, limit=1000) #REMOVE LIMIT FOR FULL TRAINING!!!!!!
+    dataset = CaravanaDataset(WORKING_DIR+DATA_FOLDER, limit=200) #REMOVE LIMIT FOR FULL TRAINING!!!!!!
     print("Dataset size: ",len(dataset))
 
     generator = torch.Generator().manual_seed(25)
@@ -167,8 +171,8 @@ def main():
     print(f"Using {device} device")
 
     #parameters
-    batch_size = 8
-    num_epochs = 2
+    batch_size = 2 #8
+    num_epochs = 50
     learn_rate = 3.e-4
 
     seeding(123)
@@ -187,8 +191,8 @@ def main():
 
     #SAVE MODEL
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    model_path = MODEL_STORE_PATH + 'model_{}.pth'.format(timestamp)
-    torch.save(model.state_dict(), model_path)
+    model_path = MODEL_STORE_PATH + 'model_{}'.format(timestamp)
+    torch.save(model, model_path)
 
 if __name__ == '__main__':
     main()

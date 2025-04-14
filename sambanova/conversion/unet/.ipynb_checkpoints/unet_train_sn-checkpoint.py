@@ -26,7 +26,8 @@ from model import Unet
 
 #WORKING_DIR = ''
 #MODEL_STORE_PATH = WORKING_DIR + ''
-
+IMG_HEIGHT = 128 #512
+IMG_WIDTH = 128 #512
 
 #Include this function in any sambanova conversion
 def add_user_args(parser: argparse.ArgumentParser) -> None:
@@ -91,8 +92,8 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
 
     dummy_image = (
-        samba.randn(args.bs, 3, 512, 512, name="image", batch_dim=0),
-        samba.randn(args.bs, 1, 512, 512, name="mask", batch_dim=0),
+        samba.randn(args.bs, 3, IMG_HEIGHT, IMG_WIDTH, name="image", batch_dim=0),
+        samba.randn(args.bs, 1, IMG_HEIGHT, IMG_WIDTH, name="mask", batch_dim=0),
     )
 
     return dummy_image
@@ -101,12 +102,12 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
 class CaravanaDataset(Dataset):
     def __init__(self, root_path: str, limit: int=None):
         self.root_path = root_path
-        self.transform = Compose([Resize((512, 512)), ToTensor()])
+        self.transform = Compose([Resize((IMG_HEIGHT, IMG_WIDTH)), ToTensor()])
 
         self.images = sorted([root_path + "train_images/" + i for i in os.listdir(root_path + "train_images/")])
         self.masks = sorted([root_path + "train_masks/" + i for i in os.listdir(root_path + "train_masks/")])
 
-        if limit == None:
+        if (limit == None) or (limit >= len(self.images)):
             self.limit = len(self.images)
         else:
             self.limit = limit
@@ -124,7 +125,7 @@ class CaravanaDataset(Dataset):
         
 
 def prepare_dataloader(args: argparse.Namespace) -> Tuple[SambaLoader, SambaLoader, SambaLoader]:
-    dataset = CaravanaDataset(args.data_path, limit=1000) #REMOVE LIMIT FOR FULL TRAINING!!!!!!
+    dataset = CaravanaDataset(args.data_path, limit=200) #REMOVE LIMIT FOR FULL TRAINING!!!!!!
     #print("Dataset size: ",len(dataset))
 
     # Create datasets
@@ -271,7 +272,7 @@ def main(argv):
 
         ##SAVE MODEL
         #timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        #model_path = MODEL_STORE_PATH + 'model_{}.pth'.format(timestamp)
+        #model_path = args.model_path + 'model_{}'.format(timestamp)
         #torch.save(model.state_dict(), model_path)
     else:
         #Compile
