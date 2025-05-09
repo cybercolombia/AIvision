@@ -2,24 +2,23 @@ import sambaflow
 import sambaflow.samba as samba
 import sambaflow.samba.optim as optim
 import sambaflow.samba.utils as utils
-#from sambaflow.samba.utils.common import common_app_driver
 from sambaflow.samba.utils.pef_utils import get_pefmeta
 from sambaflow.samba.utils.argparser import parse_app_args
 from sambaflow.samba.sambaloader import SambaLoader
 
 import sys
 import argparse
-from typing import Tuple
+from typing import Tuple, List
 
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+from torchvision import datasets
+from torchvision import transforms
+import numpy as np
 
-from model import ConvNet
+from model import AutoEncoder
 
-# The model stays the same
 
 #Include this function in any sambanova conversion
 def add_user_args(parser: argparse.ArgumentParser) -> None:
@@ -36,6 +35,13 @@ def add_user_args(parser: argparse.ArgumentParser) -> None:
         default=100,
         metavar="N",
         help="input batch size for training (default: 100)",
+    )
+    parser.add_argument(
+        "-bst",
+        type=int,
+        default=100,
+        metavar="N",
+        help="input batch size for testing (default: 100)",
     )
     parser.add_argument(
         "--num-epochs",
@@ -83,8 +89,7 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
 
     dummy_image = (
-        samba.randn(args.bs, 1, 28, 28, name="image", batch_dim=0),
-        samba.randint(args.num_classes, (args.bs,), name="label", batch_dim=0),
+        samba.randn(args.bs, 1, 28*28, name="image", batch_dim=0),
     )
 
     return dummy_image
@@ -105,29 +110,15 @@ def prepare_dataloader(args: argparse.Namespace) -> Tuple[sambaflow.samba.sambal
     """
 
     # Transform the raw MNIST data into PyTorch Tensors, which will be converted to SambaTensors
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,)),
-        ]
-    )
+    trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
 
     # Get the train & test data (images and labels) from the MNIST dataset
-    train_dataset = datasets.MNIST(
-        root=args.data_path,
-        train=True,
-        transform=transform,
-        download=True,
-    )
-    test_dataset = datasets.MNIST(root=args.data_path, train=False, transform=transform)
+    train_dataset = datasets.MNIST(root=args.data_path, train=True, transform=trans, download=True)
+    test_dataset = datasets.MNIST(root=args.data_path, train=False, transform=trans)
 
     # Set up the train & test data loaders (input pipeline)
-    train_loader = DataLoader(
-        dataset=train_dataset, batch_size=args.bs, shuffle=True
-    )
-    test_loader = DataLoader(
-        dataset=test_dataset, batch_size=args.bs, shuffle=False
-    )
+    train_loader = DataLoader(dataset=train_dataset, batch_size=args.bs, shuffle=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=args.bst, shuffle=False)
 
     # Create SambaLoaders
     sn_train_loader = SambaLoader(train_loader, ["image", "label"])
@@ -135,94 +126,77 @@ def prepare_dataloader(args: argparse.Namespace) -> Tuple[sambaflow.samba.sambal
 
     return sn_train_loader, sn_test_loader
 
-def train(args: argparse.Namespace, model: nn.Module) -> None:
-    """
-    Trains the model.
-
-    Prepares and loads the data, then runs the training loop with the hyperparameters specified
-    by the input arguments.  Calculates loss and accuracy over the course of training.
-
-    Args:
-        args (argparse.Namespace): User- and system-defined command line arguments
-        model (nn.Module): ConvNet model
-    """
-
-    sn_train_loader, _ = prepare_dataloader(args)
+def train(args: argparse.Namespace,
+          epoch: int, log_interval: int,
+          model: nn.Module, sn_train_loader: SambaLoader,
+          train_losses: List[float], train_counter: List[int]) -> None:
     hyperparam_dict = {"lr": args.learning_rate}
+    
+    model.train() #tell the model it is a training round
+    for batch_idx, data in enumerate(sn_train_loader):
+        x_batch, _ = data
+        x_batch = x_batch.reshape(-1, 28*28)
+        
+        loss, pred = samba.session.run(
+            imput_tensors = (x_batch,),
+            output_tensors=model.output_tensors,
+            hyperparam_dict=hyperparam_dict
+        )
+        
+        if batch_idx % log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx*len(x_batch), len(train_loader.dataset),
+                100.*batch_idx/len(train_loader), loss.item()
+            ))
+            train_losses.append(loss.item())
+            train_counter.append(batch_idx*args.bs + epoch*len(train_loader.dataset))
 
-    total_step = len(sn_train_loader)
-    loss_list = []
-    acc_list = []
-
-    for epoch in range(args.num_epochs):
-        for i, (images, labels) in enumerate(sn_train_loader):
-
-            # Run the model on RDU: forward -> loss/gradients -> backward/optimizer
-            loss, outputs = samba.session.run(
-                input_tensors=(images, labels),
-                output_tensors=model.output_tensors,
-                hyperparam_dict=hyperparam_dict
-            )
-
-            # Convert SambaTensors back to Torch Tensors to calculate accuracy
-            loss, outputs = samba.to_torch(loss), samba.to_torch(outputs)
-            loss_list.append(loss.tolist())
-
-            # Track the accuracy
-            total = labels.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            correct = (predicted == labels).sum().item()
-            acc_list.append(correct / total)
-
-            if (i + 1) % 100 == 0:
-                print(
-                    "Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%".format(
-                        epoch + 1,
-                        args.num_epochs,
-                        i + 1,
-                        total_step,
-                        torch.mean(loss),
-                        (correct / total) * 100,
-                    )
-                )
+def test(model: nn.Module, sn_test_loader: SambaLoader,
+        test_losses: List[float]) -> None:
+    model.eval() #tell the model it is being evaluated
+    test_loss = 0
+    with torch.no_grad():
+        for data in sn_test_loader:
+            x_batch, _ = data
+            x_batch = x_batch.reshape(-1, 28*28)
+            loss, pred = model(x_batch)
+            test_loss += loss.item()
+            val = pred.data.max(1, keepdim=True)[1]
+    test_loss /= len(test_loader)
+    test_losses.append(test_loss)
+    print('\nTest set: Avg. loss: {:.4f}'.format(test_loss,))
 
 def main(argv):
-
     args = parse_app_args(argv=argv, common_parser_fn=add_user_args)
 
-    # Create the CNN model
-    model = ConvNet()
+    # Create the model
+    model = AutoEncoder()
 
     # Convert model to SambaFlow (SambaTensors)
     samba.from_torch_model_(model)
 
     # Create optimizer
-    # Note that SambaFlow currently supports AdamW, not Adam, as an optimizer
     optimizer = samba.optim.AdamW(model.parameters(), lr=args.learning_rate)
-
-    # Normally, we'd define a loss function here, but with SambaFlow, it can be defined
-    # as part of the model, which we have done in this case
 
     # Create dummy SambaTensor for graph tracing
     inputs = get_inputs(args)
 
-    # The common_app_driver() handles model compilation and various other tasks, e.g.,
     # measure-performance.  Running, or training, a model must be explicitly carried out
     if args.command == "run":
         utils.trace_graph(model, inputs, optimizer, pef=args.pef, mapping=args.mapping)
-        train(args, model)
+        sn_train_loader, sn_test_loader = prepare_dataloader(args)
+        test(model, sn_test_loader, test_losses)
+        for epoch in range(args.num_epochs):
+            train(args, epoch, log_interval,
+                  model,
+                  sn_train_loader,
+                  train_losses, train_counter)
+            test(model, sn_test_loader, test_losses)
     else:
-        # common_app_driver(args=args,
-        #                 model=model,
-        #                 inputs=inputs,
-        #                 optim=optimizer,
-        #                 name=model.__class__.__name__,
-        #                 init_output_grads=not args.inference,
-        #                 app_dir=utils.get_file_dir(__file__))
         samba.session.compile(model=model,
                               inputs=inputs,
                               optimizers=optimizer,
-                              name='convnet_torch',
+                              name='aenet_torch',
                               config_dict=vars(args),
                               pef_metadata=get_pefmeta(args, model))
 

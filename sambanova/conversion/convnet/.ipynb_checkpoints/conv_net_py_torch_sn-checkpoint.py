@@ -17,52 +17,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+from model import ConvNet
+
 # The model stays the same
-class ConvNet(nn.Module):
-    """
-    Instantiate a 4-layer CNN for MNIST Image Classification.
-
-    In SambaFlow, it is possible to include a loss function as part of a model's definition and put it in
-    the forward method to be computed.
-
-    Typical SambaFlow usage example:
-
-    model = ConvNet()
-    samba.from_torch_model_(model)
-    optimizer = ...
-    inputs = ...
-    if args.command == "run":
-        utils.trace_graph(model, inputs, optimizer, pef=args.pef, mapping=args.mapping)
-        train(args, model)
-    """
-
-    def __init__(self):
-
-        super(ConvNet, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.drop_out = nn.Dropout()
-        self.fc1 = nn.Linear(7 * 7 * 64, 1000)
-        self.fc2 = nn.Linear(1000, 10)
-        self.criterion = nn.CrossEntropyLoss() # Add loss function to model
-
-    def forward(self, x: torch.Tensor, labels: torch.Tensor):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = out.reshape(out.size(0), -1)
-        out = self.drop_out(out)
-        out = self.fc1(out)
-        out = self.fc2(out)
-        loss = self.criterion(out, labels)     # Compute loss
-        return loss, out
 
 #Include this function in any sambanova conversion
 def add_user_args(parser: argparse.ArgumentParser) -> None:
