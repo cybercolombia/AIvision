@@ -42,8 +42,8 @@ def prepare_dataloader(batch_size: int) -> Tuple[DataLoader, DataLoader]:
     test_dataset = CustomDataset(DATA_PATH + "test.txt")
     
     # Data loader
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
 
     return train_loader, test_loader
 

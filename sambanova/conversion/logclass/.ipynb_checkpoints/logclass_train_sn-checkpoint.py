@@ -61,7 +61,7 @@ def add_user_args(parser: argparse.ArgumentParser) -> None:
         "--data-path",
         type=str,
         default="data",
-        help="Download location for MNIST data",
+        help="Location of data",
     )
     parser.add_argument(
         "--model-path", type=str, default="model", help="Save location for model"
@@ -82,7 +82,7 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
 
     dummy_data = (
-        samba.randn(args.bs, 1, 2, name="data", batch_dim=0),
+        samba.randn(args.bs, 2, name="data", batch_dim=0),
         samba.randint(args.num_classes, (args.bs,), name="label", batch_dim=0),
     )
 
@@ -111,18 +111,18 @@ class CustomDataset(Dataset):
         sample_target = torch.tensor(self.targets[idx], dtype=torch.long)
         return sample_data, sample_target
 
-def prepare_dataloader(batch_size: int) -> Tuple[SambaLoader, SambaLoader]:
+def prepare_dataloader(args: argparse.Namespace) -> Tuple[SambaLoader, SambaLoader]:
     # Data set
-    train_dataset = CustomDataset(DATA_PATH + "train.txt")
-    test_dataset = CustomDataset(DATA_PATH + "test.txt")
+    train_dataset = CustomDataset(args.data_path + "/train.txt")
+    test_dataset = CustomDataset(args.data_path + "/test.txt")
     
     # Data loader
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=args.bs, shuffle=True, drop_last=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=args.bs, shuffle=False, drop_last=True)
 
     # Create SambaLoaders
-    sn_train_loader = SambaLoader(train_loader, ["image", "label"])
-    sn_test_loader = SambaLoader(test_loader, ["image", "label"])
+    sn_train_loader = SambaLoader(train_loader, ["data", "label"])
+    sn_test_loader = SambaLoader(test_loader, ["data", "label"])
     
     return sn_train_loader, sn_test_loader
 
@@ -164,7 +164,7 @@ def train(args: argparse.Namespace, model: nn.Module) -> None:
             correct = (predicted == labels).sum().item()
             acc_list.append(correct / total)
 
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 10 == 0:
                 print(
                     "Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%".format(
                         epoch + 1,
@@ -176,7 +176,7 @@ def train(args: argparse.Namespace, model: nn.Module) -> None:
                     )
                 )
 
-def main():
+def main(argv):
     # Hyperparameters
     args = parse_app_args(argv=argv, common_parser_fn=add_user_args)
 
@@ -202,7 +202,7 @@ def main():
         samba.session.compile(model=model,
                               inputs=inputs,
                               optimizers=optimizer,
-                              name='convnet_torch',
+                              name='logclass',
                               config_dict=vars(args),
                               pef_metadata=get_pefmeta(args, model))
     
