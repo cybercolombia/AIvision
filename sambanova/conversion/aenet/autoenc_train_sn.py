@@ -89,7 +89,7 @@ def get_inputs(args: argparse.Namespace) -> Tuple[samba.SambaTensor]:
     """
 
     dummy_image = (
-        samba.randn(args.bs, 1, 28*28, name="image", batch_dim=0),
+        samba.randn(args.bs, 28*28, name="image", batch_dim=0),
     )
 
     return dummy_image
@@ -168,7 +168,8 @@ def test(model: nn.Module, sn_test_loader: SambaLoader,
 
 def main(argv):
     args = parse_app_args(argv=argv, common_parser_fn=add_user_args)
-
+    log_interval = 100
+    
     # Create the model
     model = AutoEncoder()
 
@@ -185,6 +186,12 @@ def main(argv):
     if args.command == "run":
         utils.trace_graph(model, inputs, optimizer, pef=args.pef, mapping=args.mapping)
         sn_train_loader, sn_test_loader = prepare_dataloader(args)
+
+        train_losses = []
+        train_counter = []
+        test_losses = []
+        test_counter = [i*len(train_loader.dataset) for i in range(epochs + 1)]
+        
         test(model, sn_test_loader, test_losses)
         for epoch in range(args.num_epochs):
             train(args, epoch, log_interval,

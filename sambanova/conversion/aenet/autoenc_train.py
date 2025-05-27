@@ -71,7 +71,7 @@ def test(model: nn.Module, test_loader: DataLoader,
 
 def main():
     # Hyperparameters
-    epochs = 5
+    epochs = 6
     learn_rate = 1e-3
     batch_size_train = 32
     batch_size_test = 1000
@@ -85,7 +85,7 @@ def main():
     
     model = AutoEncoder().to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(),
+    optimizer = torch.optim.AdamW(model.parameters(),
                                 lr=learn_rate,
                                 weight_decay=1e-8)
     
